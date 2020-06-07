@@ -1,8 +1,9 @@
 package com.appback.appbacksdk
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
-import com.appback.appbacksdk.AppbackConstants.BASE_URL
+import com.appback.appbacksdk.AppbackConstants.AUTH_BASE_URL
 import com.appback.appbacksdk.AppbackConstants.DATABASE_NAME
 import com.appback.appbacksdk.callbacks.OnToggleSearched
 import com.appback.appbacksdk.callbacks.OnTogglesSearched
@@ -31,7 +32,7 @@ import retrofit2.converter.gson.GsonConverterFactory
  * @author - sapardo10
  * @since 0.0.1
  */
-open class Appback private constructor(context: Context) {
+open class AppBack private constructor(context: Context) {
 
     /**
      * ---------------------------------------------------------------------------------------------
@@ -39,7 +40,7 @@ open class Appback private constructor(context: Context) {
      * ---------------------------------------------------------------------------------------------
      */
 
-    companion object : SingletonHolder<Appback, Context>(::Appback)
+    companion object : SingletonHolder<AppBack, Context>(::AppBack)
 
     /**
      * ---------------------------------------------------------------------------------------------
@@ -74,15 +75,16 @@ open class Appback private constructor(context: Context) {
     //Instance of the token provided by the server when the application has been authenticated
     private var token: AccessToken? = null
 
+    private var endpoint: String? = null
     /**
      * ---------------------------------------------------------------------------------------------
      * -------------------------------------INITIALIZATION------------------------------------------
      * ---------------------------------------------------------------------------------------------
      */
     init {
-        //Instantiates the Retrofit client
-        api = getRetrofitClient()
 
+        //Instantiates the Retrofit client
+        api = getRetrofitClient(baseURL = AUTH_BASE_URL)
         //Instantiates the database
         database = getAppbackDatabase(context)
     }
@@ -116,18 +118,19 @@ open class Appback private constructor(context: Context) {
         logRouter: String? = null
     ) {
         w1 = scope.async {
+            Log.e("Entro", "Hola")
             if (apiKey != null) {
                 getAuthenticationToken(apiKey)
             }
-            translationRouter?.let {
-                initializeTranslationsHelper(it)
-            }
+            //translationRouter?.let {
+            //    initializeTranslationsHelper(it)
+            //}
             toggleRouter?.let {
                 initializeTogglesHelper(it)
             }
-            logRouter?.let {
-                initializeLogsHelper(it)
-            }
+//            logRouter?.let {
+//                initializeLogsHelper(it)
+//            }
         }
     }
 
@@ -319,14 +322,117 @@ open class Appback private constructor(context: Context) {
             val toggle = withContext(Dispatchers.Default) {
                 togglesHelper?.getToggle(key)
             }
+
             if (toggle != null) {
                 callback.onToggleFound(toggle)
             } else {
                 callback.onToggleNotFound(key)
             }
         }
-
     }
+
+    /**
+     * Method that will get a defined toggle given a key and a router, if no router is
+     * provided the method will try to use a router provided on a time before, being on another
+     * method called or on the [configure] method.
+     * @param key String containing the key of the toggle that wants to be fetched
+     * @param callback [OnToggleSearched] that will be called when the operation has been
+     * completed successfully.
+     * @param router String containing the router where the toggle should be searched, if null
+     * it will try to use an older router to fetch the [Toggle]
+     * @throws [RouterNotDefinedException] if no router has been defined for toggles up to
+     * this point
+     * @author - Juan David
+     * @since 0.0.1
+     */
+    @Throws(RouterNotDefinedException::class)
+    fun getBoolToggle(key: String, router: String? = null, callback: (result: Boolean?) -> Unit) {
+        router?.let { initializeLogsHelper(it) }
+        scope.launch {
+            w1?.await()
+            val toggle = withContext(Dispatchers.Default) {
+                togglesHelper?.getToggle(key)
+            }
+            if (toggle != null) {
+                if (toggle.value == "1") {
+                    callback(true)
+                } else {
+                    callback(false)
+                }
+            } else {
+                callback(null)
+            }
+        }
+    }
+
+    /**
+     * Method that will get a defined toggle given a key and a router, if no router is
+     * provided the method will try to use a router provided on a time before, being on another
+     * method called or on the [configure] method.
+     * @param key String containing the key of the toggle that wants to be fetched
+     * @param callback [OnToggleSearched] that will be called when the operation has been
+     * completed successfully.
+     * @param router String containing the router where the toggle should be searched, if null
+     * it will try to use an older router to fetch the [Toggle]
+     * @throws [RouterNotDefinedException] if no router has been defined for toggles up to
+     * this point
+     * @author - Juan David
+     * @since 0.0.1
+     */
+    @Throws(RouterNotDefinedException::class)
+    fun getIntToggle(key: String, callback: (result: Int?) -> Unit, router: String? = null) {
+        router?.let { initializeLogsHelper(it) }
+        scope.launch {
+            w1?.await()
+            val toggle = withContext(Dispatchers.Default) {
+                togglesHelper?.getToggle(key)
+            }
+            if (toggle != null) {
+                try {
+                    callback(toggle.value.toInt())
+                } catch (e: Exception) {
+                    callback(null)
+                }
+            } else {
+                callback(null)
+            }
+        }
+    }
+
+    /**
+     * Method that will get a defined toggle given a key and a router, if no router is
+     * provided the method will try to use a router provided on a time before, being on another
+     * method called or on the [configure] method.
+     * @param key String containing the key of the toggle that wants to be fetched
+     * @param callback [OnToggleSearched] that will be called when the operation has been
+     * completed successfully.
+     * @param router String containing the router where the toggle should be searched, if null
+     * it will try to use an older router to fetch the [Toggle]
+     * @throws [RouterNotDefinedException] if no router has been defined for toggles up to
+     * this point
+     * @author - Juan David
+     * @since 0.0.1
+     */
+    @Throws(RouterNotDefinedException::class)
+    fun getDoubleToggle(key: String, callback: (result: Double?) -> Unit, router: String? = null) {
+        router?.let { initializeLogsHelper(it) }
+        scope.launch {
+            w1?.await()
+            val toggle = withContext(Dispatchers.Default) {
+                togglesHelper?.getToggle(key)
+            }
+            if (toggle != null) {
+                try {
+                    callback(toggle.value.toDouble())
+                } catch (e: Exception) {
+                    callback(null)
+                }
+            } else {
+                callback(null)
+            }
+        }
+    }
+
 
     /**
      * Method that will set the lifespan of the toggles for the given router
@@ -396,12 +502,11 @@ open class Appback private constructor(context: Context) {
      * it will return a client without logging nor authorization interceptor
      * @return Retrofit client of [AppbackApi]
      */
-    private fun getRetrofitClient(token: AccessToken? = null): AppbackApi {
+    private fun getRetrofitClient(token: AccessToken? = null, baseURL: String?): AppbackApi {
         val client = if (token != null) {
             val httpClient = OkHttpClient.Builder()
             val logging = HttpLoggingInterceptor()
             logging.level = HttpLoggingInterceptor.Level.BODY
-
             httpClient
                 .addInterceptor(AuthenticationInterceptor(token.accessToken))
                 .addInterceptor(logging)
@@ -411,7 +516,7 @@ open class Appback private constructor(context: Context) {
         }
 
         val retrofit = Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(baseURL ?: endpoint)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
@@ -425,18 +530,22 @@ open class Appback private constructor(context: Context) {
      * @param apiKey String containing the api key that wants to be used for authentication
      */
     private suspend fun getAuthenticationToken(apiKey: String) {
-        this@Appback.apiKey = apiKey
-
+        this@AppBack.apiKey = apiKey
         val localToken = token
         try {
             token = withContext(Dispatchers.Default) {
                 api.getToken(apiKey)
             }
-            api = getRetrofitClient(token)
-
+            api = getRetrofitClient(token, AUTH_BASE_URL)
+            token.let {
+                endpoint = it?.endpoint
+            }
+            api = getRetrofitClient(token, token?.endpoint + "/api/")
+            Log.e("token", token.toString())
         } catch (e: Exception) {
             token = localToken
             e.printStackTrace()
+            Log.e("token", e.localizedMessage)
         }
     }
 

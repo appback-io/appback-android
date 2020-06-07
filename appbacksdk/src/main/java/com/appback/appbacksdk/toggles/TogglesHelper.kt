@@ -24,12 +24,17 @@ internal class TogglesHelper(
      * Method that will load the toggles for the router defined when this class was created
      */
     suspend fun loadToggles() {
-        val togglesResponse = api.loadToggles(router)
-        val toggles = togglesResponse.toggles
-        for (toggle: Toggle in toggles) {
-            toggle.key += "-$router"
+
+        try {
+            val togglesResponse = api.loadToggles(router)
+            val toggles = togglesResponse.toggles
+            for (toggle: Toggle in toggles) {
+                toggle.key += "-$router"
+            }
+            toggleDao.insertAll(toggles)
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        toggleDao.insertAll(toggles)
     }
 
     /**
@@ -47,17 +52,19 @@ internal class TogglesHelper(
         }
         var toggles = toggleDao.getAllByRouter(databaseRouter)
         if (toggles.isEmpty()) {
-            val togglesResponse = api.loadToggles(router)
-            val togglesList = togglesResponse.toggles
-            for (toggle: Toggle in togglesList) {
-                toggle.key += "-$router"
+            try {
+                val togglesResponse = api.loadToggles(router)
+                val togglesList = togglesResponse.toggles
+                for (toggle: Toggle in togglesList) {
+                    toggle.key += "-$router"
+                }
+                toggleDao.insertAll(togglesList)
+                toggles = togglesList
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-            toggleDao.insertAll(togglesList)
-            toggles = togglesList
         }
-
         return toggles
-
     }
 
     /**

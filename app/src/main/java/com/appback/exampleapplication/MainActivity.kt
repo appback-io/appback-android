@@ -4,8 +4,7 @@ import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.appback.appbacksdk.Appback
-import com.appback.appbacksdk.AppbackLogLevel
+import com.appback.appbacksdk.AppBack
 import com.appback.appbacksdk.callbacks.OnToggleSearched
 import com.appback.appbacksdk.callbacks.OnTogglesSearched
 import com.appback.appbacksdk.callbacks.OnTranslationSearched
@@ -38,12 +37,18 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched, OnToggleSearche
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        AppBack.getInstance(baseContext).configure(apiKey = "RIvzTBbH7LnHsxBmomzogxov0B4lW7tumhho5jaTxLMjfAPv4t1589904786", toggleRouter = "toggles_prod")
+        //AppBack.getInstance(baseContext).getToggle("show_coffe", this, router = "toggles_prod")
 
-        Appback.getInstance(baseContext).getTranslation("appname", this)
+        AppBack.getInstance(baseContext).getBoolToggle("show_coffe", router = "toggles_prod", callback =  {
+            runOnUiThread {
+                tvToggle?.text = it.toString()
+            }
+        })
 
-        Appback.getInstance(baseContext).getToggle("new_screen_title", this)
+        //Appback.getInstance(baseContext).getTranslation("appname", this)
 
-        Appback.getInstance(baseContext).getTranslations(this)
+        /*Appback.getInstance(baseContext).getTranslations(this)
 
         Appback.getInstance(baseContext).getToggles(this)
 
@@ -53,7 +58,7 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched, OnToggleSearche
                 description = "Description of test event",
                 level = AppbackLogLevel.LOG_LEVEL_LOW
             )
-        }
+        }*/
     }
 
     override fun onTranslationFound(translation: Translation) {
@@ -70,7 +75,7 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched, OnToggleSearche
 
     override fun onToggleFound(toggle: Toggle) {
         runOnUiThread {
-            tvToggle?.text = toggle.value
+            //tvToggle?.text = toggle.value
         }
     }
 

@@ -1,8 +1,10 @@
 package com.appback.appbacksdk
 
 internal object AppbackConstants {
-    const val BASE_URL = "https://appback.io/api/"
+    //const val BASE_URL = "https://api.appback.io/api/"
+    const val AUTH_BASE_URL = "https://api-auth.appback.io/api/"
     const val DATABASE_NAME = "appback-database"
+    const val AUTH_URL = ""
 
     //ERRORS
     const val ROUTE_NOT_DEFINED =

@@ -45,6 +45,9 @@ internal class TranslationsHelper(
         } else {
             "-$localRouter"
         }
+
+        print("Ojo" + databaseRouter)
+
         var translations = translationDao.getAllByRouter(databaseRouter)
         if (translations.isEmpty()) {
             val translationsResponse = api.loadTranslations(router)

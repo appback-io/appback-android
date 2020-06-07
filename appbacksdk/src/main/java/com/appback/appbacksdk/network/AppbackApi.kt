@@ -52,7 +52,7 @@ internal interface AppbackApi {
      * @param apiKey String containing the api key to generate the token
      * @return [AccessToken] holding the token to communicate with the back
      */
-    @GET("token")
+    @POST("token")
     suspend fun getToken(@Query("key") apiKey: String): AccessToken
 
 }
