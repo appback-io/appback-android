@@ -1,5 +1,6 @@
 package com.appback.appbacksdk
 
+import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidx.room.Room
@@ -10,6 +11,7 @@ import com.appback.appbacksdk.callbacks.OnTogglesSearched
 import com.appback.appbacksdk.callbacks.OnTranslationSearched
 import com.appback.appbacksdk.callbacks.OnTranslationsSearched
 import com.appback.appbacksdk.database.AppbackDatabase
+import com.appback.appbacksdk.device.DeviceInformationUtils
 import com.appback.appbacksdk.exceptions.RouterNotDefinedException
 import com.appback.appbacksdk.logs.LogsHelper
 import com.appback.appbacksdk.network.AppbackApi
@@ -24,6 +26,11 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.lang.reflect.Array
+import java.security.Timestamp
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 /**
  * Class containing the public API for the appback android SDK, this class presented as a singleton
@@ -118,7 +125,6 @@ open class AppBack private constructor(context: Context) {
         logRouter: String? = null
     ) {
         w1 = scope.async {
-            Log.e("Entro", "Hola")
             if (apiKey != null) {
                 getAuthenticationToken(apiKey)
             }
@@ -315,18 +321,17 @@ open class AppBack private constructor(context: Context) {
      * @since 0.0.1
      */
     @Throws(RouterNotDefinedException::class)
-    fun getToggle(key: String, callback: OnToggleSearched, router: String? = null) {
+    fun getToggle(key: String, router: String? = null, callback: (result: String?) -> Unit) {
         router?.let { initializeLogsHelper(it) }
         scope.launch {
             w1?.await()
             val toggle = withContext(Dispatchers.Default) {
                 togglesHelper?.getToggle(key)
             }
-
             if (toggle != null) {
-                callback.onToggleFound(toggle)
+                callback(toggle.value)
             } else {
-                callback.onToggleNotFound(key)
+                callback(null)
             }
         }
     }
@@ -465,16 +470,22 @@ open class AppBack private constructor(context: Context) {
      */
     @Throws(RouterNotDefinedException::class)
     fun addEventLog(
-        name: String,
-        description: String,
-        level: AppbackLogLevel,
-        router: String? = null
+        context: Context,
+        router: String? = null,
+        eventName: String,
+        parameters: ArrayList<HashMap<String, Any>>,
+        deviceInformation: Boolean = false
     ) {
+        if (deviceInformation) {
+            for ((key, value) in DeviceInformationUtils.getDeviceInformation(context = context)) {
+                parameters.add(hashMapOf(key to value))
+            }
+        }
+
         router?.let { logsHelper = LogsHelper(api, database.logEventDao(), it) }
         scope.launch {
             w1?.await()
-            logsHelper?.sendLog(name, description, level)
-
+            router?.let { logsHelper?.sendLog(name = eventName, parameters = parameters, time = System.currentTimeMillis()/1000, router = it) }
         }
     }
 
@@ -541,11 +552,9 @@ open class AppBack private constructor(context: Context) {
                 endpoint = it?.endpoint
             }
             api = getRetrofitClient(token, token?.endpoint + "/api/")
-            Log.e("token", token.toString())
         } catch (e: Exception) {
             token = localToken
             e.printStackTrace()
-            Log.e("token", e.localizedMessage)
         }
     }
 

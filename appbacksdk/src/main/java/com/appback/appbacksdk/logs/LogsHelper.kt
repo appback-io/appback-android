@@ -1,8 +1,9 @@
 package com.appback.appbacksdk.logs
 
-import com.appback.appbacksdk.AppbackLogLevel
+import android.util.Log
 import com.appback.appbacksdk.database.LogEventDao
 import com.appback.appbacksdk.network.AppbackApi
+import com.appback.appbacksdk.poko.log.EventLogRequest
 import com.appback.appbacksdk.poko.log.LogEvent
 
 /**
@@ -30,26 +31,20 @@ internal class LogsHelper(
      * @param level [AppbackLogLevel] stating what kind of log is the one being sent
      */
     suspend fun sendLog(
+        router: String,
         name: String,
-        description: String,
-        level: AppbackLogLevel
+        time: Long,
+        parameters: ArrayList<HashMap<String, Any>>
     ) {
-        val success: Boolean = try {
+        try {
+            val event = EventLogRequest(time = time, name = name, router = router, parameters = parameters )
             val result = api.logEvent(
-                router, name, description, level.level
+                parameters = event
             )
             result.code != 200
         } catch (e: Exception) {
+            Log.e("error", e.toString())
             false
-        }
-        if (!success) {
-            logEventDao.insert(
-                LogEvent(
-                    name = name,
-                    description = description,
-                    level = level.level
-                )
-            )
         }
     }
 }

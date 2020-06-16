@@ -1,6 +1,8 @@
 package com.appback.exampleapplication
 
 import android.os.Bundle
+import android.util.ArrayMap
+import android.util.Log
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -11,6 +13,7 @@ import com.appback.appbacksdk.callbacks.OnTranslationSearched
 import com.appback.appbacksdk.callbacks.OnTranslationsSearched
 import com.appback.appbacksdk.poko.toggle.Toggle
 import com.appback.appbacksdk.poko.transalation.Translation
+
 
 class MainActivity : AppCompatActivity(), OnTranslationSearched, OnToggleSearched,
     OnTranslationsSearched, OnTogglesSearched {
@@ -38,27 +41,34 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched, OnToggleSearche
         setContentView(R.layout.activity_main)
 
         AppBack.getInstance(baseContext).configure(apiKey = "RIvzTBbH7LnHsxBmomzogxov0B4lW7tumhho5jaTxLMjfAPv4t1589904786", toggleRouter = "toggles_prod")
-        //AppBack.getInstance(baseContext).getToggle("show_coffe", this, router = "toggles_prod")
 
-        AppBack.getInstance(baseContext).getBoolToggle("show_coffe", router = "toggles_prod", callback =  {
+        /// String Example
+        AppBack.getInstance(baseContext).getToggle(key = "string_test", router = "toggles_prod", callback = {
             runOnUiThread {
-                tvToggle?.text = it.toString()
+                tvToggle?.text = it
             }
         })
 
-        //Appback.getInstance(baseContext).getTranslation("appname", this)
+        /// Boolean Example
+        /*AppBack.getInstance(baseContext).getBoolToggle("bool_test", router = "toggles_prod", callback =  {
+            runOnUiThread {
+                tvToggle?.text = it.toString()
+            }
+        })*/
 
-        /*Appback.getInstance(baseContext).getTranslations(this)
-
-        Appback.getInstance(baseContext).getToggles(this)
+        // Event parameters example
+        var hashItems = arrayListOf<HashMap<String, Any>>()
+        hashItems.add(hashMapOf("user" to "1234"))
+        hashItems.add(hashMapOf("price" to 30500))
 
         btnSendEvent?.setOnClickListener {
-            Appback.getInstance(baseContext).addEventLog(
-                name = "Test event",
-                description = "Description of test event",
-                level = AppbackLogLevel.LOG_LEVEL_LOW
-            )
-        }*/
+            AppBack.getInstance(baseContext).addEventLog(context = baseContext ,router = "events_prod", eventName = "prueba3", parameters = hashItems, deviceInformation = true)
+        }
+
+        // No working yet
+        AppBack.getInstance(baseContext).getTranslation("appname", this)
+        AppBack.getInstance(baseContext).getTranslations(this)
+
     }
 
     override fun onTranslationFound(translation: Translation) {

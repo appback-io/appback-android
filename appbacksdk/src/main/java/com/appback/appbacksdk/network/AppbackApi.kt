@@ -4,9 +4,9 @@ import com.appback.appbacksdk.poko.AccessToken
 import com.appback.appbacksdk.network.dtos.BaseLogResponse
 import com.appback.appbacksdk.network.dtos.BaseToggleResponse
 import com.appback.appbacksdk.network.dtos.BaseTranslationResponse
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Query
+import com.appback.appbacksdk.poko.log.EventLogRequest
+import retrofit2.http.*
+import retrofit2.http.FieldMap as FieldMap
 
 /**
  * Interface holding all the services to be call from the backend with Retrofit
@@ -41,10 +41,7 @@ internal interface AppbackApi {
      */
     @POST("v1/eventLog")
     suspend fun logEvent(
-        @Query("router") router: String,
-        @Query("name") name: String,
-        @Query("description") description: String,
-        @Query("level") level: Int
+        @Body parameters: EventLogRequest
     ): BaseLogResponse
 
     /**
