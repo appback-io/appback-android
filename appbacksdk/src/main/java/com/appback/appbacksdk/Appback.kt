@@ -1,15 +1,11 @@
 package com.appback.appbacksdk
 
-import android.app.Application
 import android.content.Context
 import android.util.Log
 import androidx.room.Room
 import com.appback.appbacksdk.AppbackConstants.AUTH_BASE_URL
 import com.appback.appbacksdk.AppbackConstants.DATABASE_NAME
-import com.appback.appbacksdk.callbacks.OnToggleSearched
-import com.appback.appbacksdk.callbacks.OnTogglesSearched
-import com.appback.appbacksdk.callbacks.OnTranslationSearched
-import com.appback.appbacksdk.callbacks.OnTranslationsSearched
+import com.appback.appbacksdk.callbacks.*
 import com.appback.appbacksdk.database.AppbackDatabase
 import com.appback.appbacksdk.device.DeviceInformationUtils
 import com.appback.appbacksdk.exceptions.RouterNotDefinedException
@@ -18,6 +14,7 @@ import com.appback.appbacksdk.network.AppbackApi
 import com.appback.appbacksdk.network.AuthenticationInterceptor
 import com.appback.appbacksdk.poko.AccessToken
 import com.appback.appbacksdk.poko.toggle.Toggle
+import com.appback.appbacksdk.poko.transalation.LanguageItem
 import com.appback.appbacksdk.poko.transalation.Translation
 import com.appback.appbacksdk.toggles.TogglesHelper
 import com.appback.appbacksdk.translations.TranslationsHelper
@@ -26,9 +23,6 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.lang.reflect.Array
-import java.security.Timestamp
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
@@ -122,7 +116,8 @@ open class AppBack private constructor(context: Context) {
         apiKey: String? = null,
         translationRouter: String? = null,
         toggleRouter: String? = null,
-        logRouter: String? = null
+        logRouter: String? = null,
+        callback: OnAppBackInitialization
     ) {
         w1 = scope.async {
             if (apiKey != null) {
@@ -137,6 +132,7 @@ open class AppBack private constructor(context: Context) {
 //            logRouter?.let {
 //                initializeLogsHelper(it)
 //            }
+            callback.onInitialization(token != null)
         }
     }
 
@@ -161,8 +157,8 @@ open class AppBack private constructor(context: Context) {
      * @since 0.0.1
      */
     @Throws(RouterNotDefinedException::class)
-    suspend fun getTranslations(router: String? = null): List<Translation> {
-        return translationsHelper?.getTranslations(router) ?: emptyList()
+    suspend fun getTranslations(router: String? = null, languageIdentifier: String): List<Translation> {
+        return translationsHelper?.getTranslations(router, languageIdentifier) ?: emptyList()
     }
 
     /**
@@ -178,11 +174,11 @@ open class AppBack private constructor(context: Context) {
      * @since 0.0.1
      */
     @Throws(RouterNotDefinedException::class)
-    fun getTranslations(callback: OnTranslationsSearched, router: String? = null) {
+    fun getTranslations(router: String? = null, languageIdentifier: String, callback: OnTranslationsSearched) {
         router?.let { translationsHelper = TranslationsHelper(api, database.translationDao(), it) }
         scope.launch {
             w1?.await()
-            val translations = translationsHelper?.getTranslations(router) ?: emptyList()
+            val translations = translationsHelper?.getTranslations(router, languageIdentifier) ?: emptyList()
             callback.onTranslationsFound(translations)
         }
     }
@@ -203,9 +199,27 @@ open class AppBack private constructor(context: Context) {
      * @since 0.0.1
      */
     @Throws(RouterNotDefinedException::class)
-    suspend fun getTranslation(key: String, router: String? = null): Translation? {
+    suspend fun getTranslation(key: String, router: String): Translation? {
         router?.let { translationsHelper = TranslationsHelper(api, database.translationDao(), it) }
-        return translationsHelper?.getTranslation(key)
+        return translationsHelper?.getTranslation(router, key)
+    }
+
+    /**
+     * Method that will get all languages available
+     * @param router String containing the router key of the get all languages that wants to be fetched
+     * @param callback that will be called when the operation has been
+     * completed successfully or null when was failed.
+     */
+    fun getLanguages(router: String, callback: (items: List<LanguageItem>?) -> Unit) {
+        translationsHelper = TranslationsHelper(api, database.translationDao(), router)
+        scope.launch {
+            try {
+                val languages = translationsHelper?.getLanguages(router)
+                callback(languages)
+            } catch (e: Exception) {
+                callback(null)
+            }
+        }
     }
 
     /**
@@ -223,12 +237,12 @@ open class AppBack private constructor(context: Context) {
      * @since 0.0.1
      */
     @Throws(RouterNotDefinedException::class)
-    fun getTranslation(key: String, callback: OnTranslationSearched, router: String? = null) {
+    fun getTranslation(router: String, key: String, callback: OnTranslationSearched) {
         router?.let { translationsHelper = TranslationsHelper(api, database.translationDao(), it) }
         scope.launch {
             w1?.await()
             val translation = withContext(Dispatchers.Default) {
-                translationsHelper?.getTranslation(key)
+                translationsHelper?.getTranslation(router, key)
             }
             if (translation != null) {
                 callback.onTranslationFound(translation)
@@ -275,13 +289,17 @@ open class AppBack private constructor(context: Context) {
      * @author - sapardo10
      * @since 0.0.1
      */
-    @Throws(RouterNotDefinedException::class)
-    fun getToggles(callback: OnTogglesSearched, router: String? = null) {
+    fun getToggles(router: String, callback: (list: List<Toggle>?) -> Unit) {
         router?.let { initializeLogsHelper(it) }
         scope.launch {
             w1?.await()
-            val toggles = togglesHelper?.getToggles(router) ?: emptyList()
-            callback.onTogglesFound(toggles)
+            var toggles = togglesHelper?.getToggles(router) ?: emptyList()
+            if (toggles != null) {
+                for (toggle: Toggle in toggles) {
+                    toggle.key = "${toggle.key.replace("-${router}", "", ignoreCase = true)}"
+                }
+            }
+            callback(toggles)
         }
     }
 
@@ -562,10 +580,10 @@ open class AppBack private constructor(context: Context) {
      * Method that will initialize or change the router for [translationsHelper]
      * @param router String that states the router that wants to be used from now on
      */
-    private suspend fun initializeTranslationsHelper(router: String) {
+    private suspend fun initializeTranslationsHelper(router: String, languageIdentifier: String) {
         translationsHelper =
             TranslationsHelper(api, database.translationDao(), router)
-        translationsHelper?.loadTranslations()
+        translationsHelper?.loadTranslations(languageIdentifier)
     }
 
     /**

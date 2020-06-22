@@ -2,6 +2,7 @@ package com.appback.appbacksdk.translations
 
 import com.appback.appbacksdk.database.TranslationDao
 import com.appback.appbacksdk.network.AppbackApi
+import com.appback.appbacksdk.poko.transalation.LanguageItem
 import com.appback.appbacksdk.poko.transalation.Translation
 
 /**
@@ -23,8 +24,8 @@ internal class TranslationsHelper(
     /**
      * Method that will load the translations for the router defined when this class was created
      */
-    suspend fun loadTranslations() {
-        val translationsResponse = api.loadTranslations(router)
+    suspend fun loadTranslations(languageIdentifier: String) {
+        val translationsResponse = api.loadTranslations(router, languageIdentifier)
         val translations = translationsResponse.translations
         for (translation: Translation in translations) {
             translation.key += "-$router"
@@ -39,7 +40,7 @@ internal class TranslationsHelper(
      * @return List of [Translation] containing all the translations for the router, empty list if none are
      * found
      */
-    suspend fun getTranslations(localRouter: String? = null): List<Translation> {
+    suspend fun getTranslations(localRouter: String? = null, languageIdentifier: String): List<Translation> {
         val databaseRouter = if (localRouter.isNullOrBlank()) {
             "-$router"
         } else {
@@ -49,18 +50,28 @@ internal class TranslationsHelper(
         print("Ojo" + databaseRouter)
 
         var translations = translationDao.getAllByRouter(databaseRouter)
-        if (translations.isEmpty()) {
-            val translationsResponse = api.loadTranslations(router)
-            val translationsList = translationsResponse.translations
-            for (translation: Translation in translationsList) {
-                translation.key += "-$router"
-            }
-            translationDao.insertAll(translationsList)
-            translations = translationsList
+        val translationsResponse = api.loadTranslations(router, languageIdentifier)
+        val translationsList = translationsResponse.translations
+        for (translation: Translation in translationsList) {
+            translation.key += "-$router"
         }
+        translationDao.insertAll(translationsList)
+        translations = translationsList
 
         return translations
 
+    }
+
+    /**
+     * Method that will get all the languages available for the specified router
+     * @param router String containing the router that wants to be checked, can be passed a
+     * null parameter to indicate that the router to use is the one defined on the class
+     * @return List of [LanguageItem] containing all the languages for the router, empty list if none are
+     * found
+     */
+    suspend fun getLanguages(router: String): List<LanguageItem> {
+        val languagesResponse = api.getLanguages(router)
+        return languagesResponse.languages
     }
 
     /**
@@ -68,7 +79,7 @@ internal class TranslationsHelper(
      * @param key String containing the key of the translation
      * @return [Translation] that has the key and router defined, null if not found on database
      */
-    suspend fun getTranslation(key: String): Translation? {
+    suspend fun getTranslation(router: String, key: String): Translation? {
         return try {
             translationDao.findTranslationAsync("$key-$router")
         } catch (e: Exception) {

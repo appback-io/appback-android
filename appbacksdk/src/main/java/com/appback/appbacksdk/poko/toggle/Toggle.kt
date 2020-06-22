@@ -7,5 +7,5 @@ import com.google.gson.annotations.SerializedName
 @Entity(tableName = "toggle")
 data class Toggle(
     @PrimaryKey @SerializedName("key") var key: String,
-    @SerializedName("value") val value: String
+    @SerializedName("value") var value: String
 )

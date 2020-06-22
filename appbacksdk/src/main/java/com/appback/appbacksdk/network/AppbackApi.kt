@@ -5,6 +5,7 @@ import com.appback.appbacksdk.network.dtos.BaseLogResponse
 import com.appback.appbacksdk.network.dtos.BaseToggleResponse
 import com.appback.appbacksdk.network.dtos.BaseTranslationResponse
 import com.appback.appbacksdk.poko.log.EventLogRequest
+import com.appback.appbacksdk.poko.transalation.Language
 import retrofit2.http.*
 import retrofit2.http.FieldMap as FieldMap
 
@@ -21,7 +22,10 @@ internal interface AppbackApi {
      * @return [BaseTranslationResponse] holding the response from the server
      */
     @GET("v1/translations")
-    suspend fun loadTranslations(@Query("router") router: String): BaseTranslationResponse
+    suspend fun loadTranslations(
+        @Query("router") router: String,
+        @Query("language_identifier") languageIdentifier: String
+    ): BaseTranslationResponse
 
     /**
      * Method to get all toggles from a router
@@ -51,5 +55,15 @@ internal interface AppbackApi {
      */
     @POST("token")
     suspend fun getToken(@Query("key") apiKey: String): AccessToken
+
+    /**
+     * Method that will get the token from the service given an authorized api key
+     * @param router String containing the router to generate the languages
+     * @return [Language] Object containing the list of languages
+     */
+    @GET("v1/translations/languages")
+    suspend fun getLanguages(
+        @Query("router") router: String
+    ): Language
 
 }
