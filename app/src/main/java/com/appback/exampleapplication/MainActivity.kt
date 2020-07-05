@@ -60,17 +60,16 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched,
                             values += "${toggle.key}: ${toggle.value} \n"
                         }
                     }
+
                     tvAllToggles?.text = values
                 }
             })
-
             /// String Example
             AppBack.getInstance(baseContext).getToggle(key = "string_test", router = "toggles_prod", callback = {
                 runOnUiThread {
                     tvToggle?.text = "Toogle example:\n ${it.toString()}"
                 }
             })
-
             /// Boolean Example
             AppBack.getInstance(baseContext).getBoolToggle("bool_test", router = "toggles_prod", callback =  {
                 runOnUiThread {
@@ -83,7 +82,6 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched,
             var hashItems = arrayListOf<HashMap<String, Any>>()
             hashItems.add(hashMapOf("user" to "1234"))
             hashItems.add(hashMapOf("price" to 30500))
-
             btnSendEvent?.setOnClickListener {
                 AppBack.getInstance(baseContext).addEventLog(context = baseContext ,router = "events_prod", eventName = "prueba3", parameters = hashItems, deviceInformation = true)
             }
@@ -108,7 +106,6 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched,
         }
     }
 
-
     override fun onTranslationFound(translation: Translation) {
         runOnUiThread {
             tvTranslation?.text = "Translation example:\n ${translation.value}"
@@ -121,6 +118,10 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched,
         }
     }
 
+    override fun getTranslationDefaultValue(key: String): String {
+        return  "Value not found, but i can send default value here"
+    }
+
     override fun onTranslationsFound(translations: List<Translation>) {
         var result = "All translations: \n"
         for (translation in translations) {
@@ -129,7 +130,7 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched,
         runOnUiThread {
             tvAllTranslations?.text = result
         }
-        AppBack.getInstance(baseContext).getTranslation(router = "translations_jutilities", key = "general.greeting", callback = this)
+        AppBack.getInstance(baseContext).getTranslation(router = "translations_jutilities", key = "general.welcome", callback = this)
     }
 
 }

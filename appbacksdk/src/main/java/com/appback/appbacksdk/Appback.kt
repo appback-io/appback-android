@@ -1,7 +1,6 @@
 package com.appback.appbacksdk
 
 import android.content.Context
-import android.util.Log
 import androidx.room.Room
 import com.appback.appbacksdk.AppbackConstants.AUTH_BASE_URL
 import com.appback.appbacksdk.AppbackConstants.DATABASE_NAME
@@ -247,7 +246,8 @@ open class AppBack private constructor(context: Context) {
             if (translation != null) {
                 callback.onTranslationFound(translation)
             } else {
-                callback.onTranslationNotFount(key)
+                val defaultValue = callback.getTranslationDefaultValue(key = key)
+                callback.onTranslationFound(Translation(key = key, value = defaultValue))
             }
         }
     }

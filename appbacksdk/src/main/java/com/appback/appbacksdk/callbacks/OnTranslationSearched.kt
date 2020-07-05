@@ -26,4 +26,6 @@ interface OnTranslationSearched {
      * @since 0.0.1
      */
     fun onTranslationNotFount(key: String)
+
+    fun getTranslationDefaultValue(key: String): String
 }
