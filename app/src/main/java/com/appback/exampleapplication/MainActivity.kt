@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched,
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         // AppBack initialization
-        AppBack.getInstance(baseContext).configure(apiKey = "RIvzTBbH7LnHsxBmomzogxov0B4lW7tumhho5jaTxLMjfAPv4t1589904786", toggleRouter = "toggles_prod", callback = this)
+        AppBack.getInstance(baseContext).configure(apiKey = "RIvzTBbH7LnHsxBmomzogxov0B4lW7tumhho5jaTxLMjfAPv4t1589904786", callback = this)
     }
 
     override fun onInitialization(success: Boolean) {
@@ -62,20 +62,22 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched,
                     }
 
                     tvAllToggles?.text = values
+
+                    /// String Example
+                    AppBack.getInstance(baseContext).getStringToggle(key = "string_test", callback = {
+                        runOnUiThread {
+                            tvToggle?.text = "Toogle example:\n ${it.toString()}"
+                        }
+                    })
+                    /// Boolean Example
+                    AppBack.getInstance(baseContext).getBooleanToggle("bool_test", callback =  {
+                        runOnUiThread {
+                            tvToggle?.text = "Toggle example:\n ${it.toString()}"
+                        }
+                    })
                 }
             })
-            /// String Example
-            AppBack.getInstance(baseContext).getToggle(key = "string_test", router = "toggles_prod", callback = {
-                runOnUiThread {
-                    tvToggle?.text = "Toogle example:\n ${it.toString()}"
-                }
-            })
-            /// Boolean Example
-            AppBack.getInstance(baseContext).getBoolToggle("bool_test", router = "toggles_prod", callback =  {
-                runOnUiThread {
-                    tvToggle?.text = "Toggle example:\n ${it.toString()}"
-                }
-            })
+
             //////////// End Toggles ///////////////////
 
             //////////// Event Logs ///////////////////
@@ -130,7 +132,7 @@ class MainActivity : AppCompatActivity(), OnTranslationSearched,
         runOnUiThread {
             tvAllTranslations?.text = result
         }
-        AppBack.getInstance(baseContext).getTranslation(router = "translations_jutilities", key = "general.welcome", callback = this)
+        AppBack.getInstance(baseContext).getTranslation(router = "translations_jutilities", key = "general.greeting", callback = this)
     }
 
 }

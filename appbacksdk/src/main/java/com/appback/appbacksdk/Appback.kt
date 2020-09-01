@@ -1,6 +1,7 @@
 package com.appback.appbacksdk
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
 import com.appback.appbacksdk.AppbackConstants.AUTH_BASE_URL
 import com.appback.appbacksdk.AppbackConstants.DATABASE_NAME
@@ -113,24 +114,12 @@ open class AppBack private constructor(context: Context) {
      */
     fun configure(
         apiKey: String? = null,
-        translationRouter: String? = null,
-        toggleRouter: String? = null,
-        logRouter: String? = null,
         callback: OnAppBackInitialization
     ) {
         w1 = scope.async {
             if (apiKey != null) {
                 getAuthenticationToken(apiKey)
             }
-            //translationRouter?.let {
-            //    initializeTranslationsHelper(it)
-            //}
-            toggleRouter?.let {
-                initializeTogglesHelper(it)
-            }
-//            logRouter?.let {
-//                initializeLogsHelper(it)
-//            }
             callback.onInitialization(token != null)
         }
     }
@@ -290,10 +279,11 @@ open class AppBack private constructor(context: Context) {
      * @since 0.0.1
      */
     fun getToggles(router: String, callback: (list: List<Toggle>?) -> Unit) {
-        router?.let { initializeLogsHelper(it) }
         scope.launch {
+            router?.let { initializeTogglesHelper(it) }
             w1?.await()
             var toggles = togglesHelper?.getToggles(router) ?: emptyList()
+
             if (toggles != null) {
                 for (toggle: Toggle in toggles) {
                     toggle.key = "${toggle.key.replace("-${router}", "", ignoreCase = true)}"
@@ -339,7 +329,7 @@ open class AppBack private constructor(context: Context) {
      * @since 0.0.1
      */
     @Throws(RouterNotDefinedException::class)
-    fun getToggle(key: String, router: String? = null, callback: (result: String?) -> Unit) {
+    fun getStringToggle(key: String, router: String? = null, callback: (result: String?) -> Unit) {
         router?.let { initializeLogsHelper(it) }
         scope.launch {
             w1?.await()
@@ -369,7 +359,7 @@ open class AppBack private constructor(context: Context) {
      * @since 0.0.1
      */
     @Throws(RouterNotDefinedException::class)
-    fun getBoolToggle(key: String, router: String? = null, callback: (result: Boolean?) -> Unit) {
+    fun getBooleanToggle(key: String, router: String? = null, callback: (result: Boolean?) -> Unit) {
         router?.let { initializeLogsHelper(it) }
         scope.launch {
             w1?.await()

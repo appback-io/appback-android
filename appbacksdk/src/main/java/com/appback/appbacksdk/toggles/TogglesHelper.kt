@@ -1,5 +1,6 @@
 package com.appback.appbacksdk.toggles
 
+import android.util.Log
 import com.appback.appbacksdk.database.ToggleDao
 import com.appback.appbacksdk.network.AppbackApi
 import com.appback.appbacksdk.poko.toggle.Toggle
